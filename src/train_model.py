@@ -19,6 +19,7 @@ class FeatureConfig:
     target: str
     rolling_window: int
     min_minutes: float
+    bad_game_pct: float
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,6 +47,15 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=20.0,
         help="Minimum minutes played to keep a game for training.",
+    )
+    parser.add_argument(
+        "--bad-game-pct",
+        type=float,
+        default=0.20,
+        help=(
+            "Percentage below season and rolling averages to flag a bad game "
+            "(default: 0.20 for 20%)."
+        ),
     )
     parser.add_argument(
         "--test-size",
@@ -101,8 +111,10 @@ def _prepare_features(df: pd.DataFrame, config: FeatureConfig) -> pd.DataFrame:
 
     df = df.groupby("player_id", group_keys=False).apply(add_group_features)
 
+    threshold = 1 - config.bad_game_pct
     df["is_bad_game"] = (
-        (df[target_col] < df["season_avg"]) & (df[target_col] < df["rolling_avg"])
+        (df[target_col] < df["season_avg"] * threshold)
+        & (df[target_col] < df["rolling_avg"] * threshold)
     )
 
     df = df[df["minutes"] >= config.min_minutes]
@@ -153,11 +165,14 @@ def _evaluate(
 
 def main() -> None:
     args = parse_args()
+    if not 0 < args.bad_game_pct < 1:
+        raise ValueError("--bad-game-pct must be a decimal between 0 and 1.")
     target = args.target.upper()
     config = FeatureConfig(
         target=target,
         rolling_window=args.rolling_window,
         min_minutes=args.min_minutes,
+        bad_game_pct=args.bad_game_pct,
     )
 
     df = pd.read_csv(args.data)

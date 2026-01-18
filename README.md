@@ -52,6 +52,7 @@ Optional flags:
 - `--target` (`PTS` or `PRA`)
 - `--rolling-window` (default: 5)
 - `--min-minutes` (default: 20)
+- `--bad-game-pct` (default: 0.20 for 20% below averages)
 - `--test-size` (default: 0.2)
 - `--output-model` (default: `model.joblib`)
 - `--metrics-out` (default: `metrics.json`)
@@ -66,6 +67,7 @@ The script builds features per player:
 - Star indicator.
 - Minutes played in current and prior games.
 
-A game is labeled as a **bad game** if the target is below both the season and
-rolling averages. The model trains only on bad-game samples that meet the
-minimum minutes threshold and predicts the *next* game result for the player.
+A game is labeled as a **bad game** if the target is at least a set percentage
+below both the season and rolling averages (default: 20%). The model trains only
+on bad-game samples that meet the minimum minutes threshold and predicts the
+*next* game result for the player.
