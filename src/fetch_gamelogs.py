@@ -9,7 +9,7 @@ from typing import Iterable, List
 
 import pandas as pd
 from nba_api.stats.endpoints import leaguedashteamstats, playergamelog
-from nba_api.stats.static import players
+from nba_api.stats.static import players, teams
 
 
 @dataclass
@@ -74,13 +74,27 @@ def _parse_player_ids(raw: str, default_ids: List[int]) -> List[int]:
     return [int(item) for item in raw.split(",") if item.strip()]
 
 
+def _team_name_to_abbrev() -> dict[str, str]:
+    team_list = teams.get_teams()
+    return {team["full_name"]: team["abbreviation"] for team in team_list}
+
+
 def _load_opponent_def_rating(season: str, season_type: str) -> dict[str, float]:
     team_stats = leaguedashteamstats.LeagueDashTeamStats(
         season=season,
         season_type_all_star=season_type,
         per_mode_detailed="PerGame",
     ).get_data_frames()[0]
-    return dict(zip(team_stats["TEAM_ABBREVIATION"], team_stats["DEF_RATING"]))
+    if "TEAM_ABBREVIATION" in team_stats.columns:
+        abbreviations = team_stats["TEAM_ABBREVIATION"]
+    elif "TEAM_NAME" in team_stats.columns:
+        name_map = _team_name_to_abbrev()
+        abbreviations = team_stats["TEAM_NAME"].map(name_map)
+    else:
+        raise KeyError(
+            "Team stats missing TEAM_ABBREVIATION and TEAM_NAME columns."
+        )
+    return dict(zip(abbreviations, team_stats["DEF_RATING"]))
 
 
 def _extract_opponent(matchup: str) -> str:
