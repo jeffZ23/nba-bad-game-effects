@@ -21,15 +21,30 @@ Provide a CSV of game logs with at least the following columns:
 | `opponent_def_rating` | Opponent defensive rating (lower = stronger defense). |
 | `is_star` | 1 if the player is considered a star, else 0. |
 
-## Usage
-Install dependencies and run training:
+## Fetching data with nba_api
+You can pull a CSV from the public NBA stats endpoints using the
+[`nba_api`](https://github.com/swar/nba_api) package:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-python src/train_model.py --data path/to/gamelogs.csv --target PTS
+python src/fetch_gamelogs.py --season 2023-24 --output gamelogs.csv
+```
+
+Helpful options:
+
+- `--player-ids` (comma-separated) to limit downloads to specific players.
+- `--max-players` to cap the number of active players fetched.
+- `--star-ids` (comma-separated) to flag stars in the output.
+- `--season-type` to switch to `Playoffs` if needed.
+
+## Training
+Train the model once you have a CSV:
+
+```bash
+python src/train_model.py --data gamelogs.csv --target PTS
 ```
 
 Optional flags:

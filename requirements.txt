@@ -1,4 +1,5 @@
 joblib
+nba_api
 numpy
 pandas
 scikit-learn
